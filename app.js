@@ -1,3 +1,4 @@
+import { installGraphGestures } from './lib/gestures.js';
 import { providers, detectProvider, selectProvider } from './lib/providers.js';
 import { listModels, analyze } from './lib/analysis.js?v=provider-colors-1';
 import { parseThreadURL } from './lib/threads.js';
@@ -15,7 +16,8 @@ function project(x,z,y=0){
  return {x:width/2+rx*scale,y:height*.62+(rz*Math.sin(tilt)-y*Math.cos(tilt))*scale,depth:rz*Math.cos(tilt)+y*Math.sin(tilt)};
 }
 function line(a,b,color,lineWidth=1){ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.strokeStyle=color;ctx.lineWidth=lineWidth;ctx.stroke();}
-function text(label,p,color,size=10){ctx.font=`600 ${size}px system-ui`;ctx.textAlign='center';ctx.lineWidth=4;ctx.strokeStyle='#19251e';ctx.strokeText(label,p.x,p.y);ctx.fillStyle=color;ctx.fillText(label,p.x,p.y);}
+function labelScale(){return width<600?.72:1;}
+function text(label,p,color,size=10){ctx.font=`600 ${size*labelScale()}px system-ui`;ctx.textAlign='center';ctx.lineWidth=width<600?2.5:4;ctx.strokeStyle='#19251e';ctx.strokeText(label,p.x,p.y);ctx.fillStyle=color;ctx.fillText(label,p.x,p.y);}
 function draw(){
  ctx.clearRect(0,0,width,height);
  for(let n=-1;n<=1.001;n+=.2){line(project(n,-1),project(n,1),'#8bae9326');line(project(-1,n),project(1,n),'#8bae9326');}
@@ -37,16 +39,16 @@ function draw(){
   ctx.beginPath();ctx.arc(base.x,base.y,2,0,Math.PI*2);ctx.fillStyle=color+'77';ctx.fill();
   if(active){ctx.beginPath();ctx.arc(point.x,point.y,12,0,Math.PI*2);ctx.strokeStyle=color;ctx.lineWidth=1;ctx.stroke();}
   ctx.beginPath();ctx.arc(point.x,point.y,active?7:5,0,Math.PI*2);ctx.fillStyle=color;ctx.fill();ctx.strokeStyle='#152219';ctx.lineWidth=2;ctx.stroke();
-  const name=person.name.length>17?person.name.slice(0,16)+'…':person.name;ctx.font='11px system-ui';
+  const name=person.name.length>17?person.name.slice(0,16)+'…':person.name;const fontSize=11*labelScale();ctx.font=`${fontSize}px system-ui`;
   const w=ctx.measureText(name).width;
   let position;
   for(const [dx,dy]of [[12,4],[12,-12],[-w-12,4],[12,20],[-w-12,-12]]){
    const candidate={x:point.x+dx,y:point.y+dy,w};
    if(candidate.x<4||candidate.x+w>width-4)continue;
-   if(!labels.some(l=>candidate.x<l.x+l.w+4&&candidate.x+w+4>l.x&&Math.abs(candidate.y-l.y)<14)){position=candidate;break;}
+   if(!labels.some(l=>candidate.x<l.x+l.w+4&&candidate.x+w+4>l.x&&Math.abs(candidate.y-l.y)<fontSize+3)){position=candidate;break;}
   }
   position??={x:point.x+12,y:point.y+4,w};labels.push(position);
-  ctx.textAlign='left';ctx.lineWidth=4;ctx.strokeStyle='#19251e';ctx.strokeText(name,position.x,position.y);ctx.fillStyle=active?'#fff':'#d5dfd7';ctx.fillText(name,position.x,position.y);
+  ctx.textAlign='left';ctx.lineWidth=width<600?2.5:4;ctx.strokeStyle='#19251e';ctx.strokeText(name,position.x,position.y);ctx.fillStyle=active?'#fff':'#d5dfd7';ctx.fillText(name,position.x,position.y);
  });
  $('empty-plot').hidden=people.some(classified);
 }
@@ -84,13 +86,18 @@ function generateDemo(){
  demo=true;$('sample').textContent='DEMO · 20 FICTIONAL PEOPLE';$('people-badge').textContent='DEMO';$('coverage').textContent='Fictional sample. Height = post count. Analyze a thread to replace this data.';renderPeople();
 }
 function reset(top=false){yaw=top?0:-.5;tilt=top?Math.PI/2:.65;zoom=1;$('top').setAttribute('aria-pressed',String(top));draw();}
-let drag=null;
-canvas.addEventListener('pointerdown',e=>{if(e.button!==0)return;drag={id:e.pointerId,x:e.clientX,y:e.clientY,sx:e.clientX,sy:e.clientY,moved:false};canvas.setPointerCapture(e.pointerId);});
-canvas.addEventListener('pointermove',e=>{if(!drag||drag.id!==e.pointerId)return;if(Math.hypot(e.clientX-drag.sx,e.clientY-drag.sy)>4)drag.moved=true;yaw+=(e.clientX-drag.x)*.007;tilt=clamp(tilt+(e.clientY-drag.y)*.007,.18,1.45);drag.x=e.clientX;drag.y=e.clientY;$('top').setAttribute('aria-pressed','false');draw();});
-canvas.addEventListener('pointerup',e=>{if(!drag||drag.id!==e.pointerId)return;if(!drag.moved){const rect=canvas.getBoundingClientRect(),x=e.clientX-rect.left,y=e.clientY-rect.top;const hits=projected.filter(p=>Math.hypot(p.x-x,p.y-y)<18).sort((a,b)=>Math.hypot(a.x-x,a.y-y)-Math.hypot(b.x-x,b.y-y));if(hits.length)select(hits[0].i);}drag=null;});
-canvas.addEventListener('pointercancel',()=>drag=null);canvas.addEventListener('lostpointercapture',()=>drag=null);
-canvas.addEventListener('wheel',e=>{e.preventDefault();zoom=clamp(zoom-e.deltaY*.001,.55,1.7);draw();},{passive:false});
-canvas.addEventListener('keydown',e=>{if(!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','+','=','-','0'].includes(e.key))return;e.preventDefault();if(e.key==='ArrowLeft')yaw-=.1;if(e.key==='ArrowRight')yaw+=.1;if(e.key==='ArrowUp')tilt=clamp(tilt-.1,.18,1.45);if(e.key==='ArrowDown')tilt=clamp(tilt+.1,.18,1.45);if(e.key==='+'||e.key==='=')zoom=clamp(zoom+.1,.55,1.7);if(e.key==='-')zoom=clamp(zoom-.1,.55,1.7);if(e.key==='0')reset();$('top').setAttribute('aria-pressed','false');draw();});
+installGraphGestures(canvas,{
+ getZoom:()=>zoom,
+ onZoom:value=>{zoom=clamp(value,.55,2.5);draw();},
+ onRotate:(dx,dy)=>{yaw+=dx*.007;tilt=clamp(tilt+dy*.007,.18,1.45);$('top').setAttribute('aria-pressed','false');draw();},
+ onTap:(clientX,clientY)=>{
+  const rect=canvas.getBoundingClientRect(),x=clientX-rect.left,y=clientY-rect.top;
+  const hits=projected.filter(p=>Math.hypot(p.x-x,p.y-y)<18).sort((a,b)=>Math.hypot(a.x-x,a.y-y)-Math.hypot(b.x-x,b.y-y));
+  if(hits.length)select(hits[0].i);
+ }
+});
+canvas.addEventListener('wheel',e=>{e.preventDefault();zoom=clamp(zoom-e.deltaY*.001,.55,2.5);draw();},{passive:false});
+canvas.addEventListener('keydown',e=>{if(!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','+','=','-','0'].includes(e.key))return;e.preventDefault();if(e.key==='ArrowLeft')yaw-=.1;if(e.key==='ArrowRight')yaw+=.1;if(e.key==='ArrowUp')tilt=clamp(tilt-.1,.18,1.45);if(e.key==='ArrowDown')tilt=clamp(tilt+.1,.18,1.45);if(e.key==='+'||e.key==='=')zoom=clamp(zoom+.1,.55,2.5);if(e.key==='-')zoom=clamp(zoom-.1,.55,2.5);if(e.key==='0')reset();$('top').setAttribute('aria-pressed','false');draw();});
 $('reset').onclick=()=>reset();$('top').onclick=()=>reset(true);$('shuffle').onclick=()=>{generateDemo();status('Fictional demo data. No requests were sent.');};
 new ResizeObserver(()=>{const rect=canvas.getBoundingClientRect();width=rect.width;height=rect.height;const dpr=window.devicePixelRatio||1;canvas.width=Math.round(width*dpr);canvas.height=Math.round(height*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);draw();}).observe(canvas);
 

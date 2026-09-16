@@ -19,7 +19,7 @@ The three axes are:
 - **Outlook:** 0 = catastrophe/extinction; 100 = prosperity/utopia.
 - **Frequency (height):** actual retrieved post count, computed in the browser—not estimated by the LLM.
 
-Drag or use arrow keys to rotate, scroll or use +/− to zoom, and press 0 to reset. Top-down view hides height; counts remain in the people list. Posters with insufficient evidence remain in the top-20 list as unclassified and are not placed at an invented neutral position. Failed/cancelled analysis preserves the previous graph.
+Drag or use arrow keys to rotate, pinch with two fingers, scroll, or use +/− to zoom, and press 0 to reset. Mobile graph labels use a smaller font; one finger rotates and two fingers zoom without rotating. Top-down view hides height; counts remain in the people list. Posters with insufficient evidence remain in the top-20 list as unclassified and are not placed at an invented neutral position. Failed/cancelled analysis preserves the previous graph.
 
 ## Architecture and key handling
 
