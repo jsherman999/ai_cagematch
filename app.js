@@ -1,10 +1,13 @@
+import { createThreadProgress } from './lib/progress.js';
 import { installGraphGestures } from './lib/gestures.js';
 import { providers, detectProvider, selectProvider } from './lib/providers.js';
-import { listModels, analyze } from './lib/analysis.js?v=provider-colors-1';
+import { listModels, analyze } from './lib/analysis.js?v=live-progress-1';
 import { parseThreadURL } from './lib/threads.js';
 
 const $=id=>document.getElementById(id);
 const canvas=$('plot'),ctx=canvas.getContext('2d');
+const progress=createThreadProgress(document);
+let showingProgress=false;
 const palette=['#daa1b8','#cfb7f4','#b7ace7','#b8c9ef','#b1dfd1','#c2e6ba','#e6d5a8','#d8bca4','#a6cad5','#d8d5c4'];
 let people=[],selected=0,width=0,height=0,projected=[],yaw=-.5,tilt=.65,zoom=1,demo=true;
 const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
@@ -20,6 +23,7 @@ function labelScale(){return width<600?.72:1;}
 function text(label,p,color,size=10){ctx.font=`600 ${size*labelScale()}px system-ui`;ctx.textAlign='center';ctx.lineWidth=width<600?2.5:4;ctx.strokeStyle='#19251e';ctx.strokeText(label,p.x,p.y);ctx.fillStyle=color;ctx.fillText(label,p.x,p.y);}
 function draw(){
  ctx.clearRect(0,0,width,height);
+ if(showingProgress)return;
  for(let n=-1;n<=1.001;n+=.2){line(project(n,-1),project(n,1),'#8bae9326');line(project(-1,n),project(1,n),'#8bae9326');}
  line(project(-1.15,0),project(1.15,0),'#b5edcb88',1.5);line(project(0,-1.15),project(0,1.15),'#c8b8ff88',1.5);
  text('LOW POTENTIAL',project(-1.28,0),'#b5edcb');text('HIGH POTENTIAL',project(1.28,0),'#b5edcb');
@@ -81,6 +85,7 @@ function renderPeople(){
  select(0);
 }
 function generateDemo(){
+ showingProgress=false;progress.hide();canvas.hidden=false;
  const names=['Alex','Morgan','Sam','Riley','Jordan','Casey','Quinn','Avery','Charlie','Taylor','Jamie','Drew','Robin','Skyler','Cameron','Sage','Blake','Reese','Rowan','Emery'];
  people=names.map((name,i)=>({id:`demo-${i}`,name,handle:name.toLowerCase(),potential:Math.round(8+Math.random()*84),outlook:Math.round(8+Math.random()*84),count:1+Math.floor(Math.random()*20),confidence:'low',rationale:'Fictional data for exploring the graph.',evidence:[]})).sort((a,b)=>b.count-a.count);
  demo=true;$('sample').textContent='DEMO · 20 FICTIONAL PEOPLE';$('people-badge').textContent='DEMO';$('coverage').textContent='Fictional sample. Height = post count. Analyze a thread to replace this data.';renderPeople();
@@ -135,16 +140,24 @@ $('analysis-form').onsubmit=async event=>{
  try{
   const payload=input();if(!payload.model)throw Error('Choose a model.');
   busy=true;$('fields').disabled=true;$('shuffle').disabled=true;$('cancel').hidden=false;
-  analysisController=new AbortController();status('Fetching this thread, counting posts, and analyzing its top posters… The current graph stays visible until results arrive.');
-  const result=await analyze(payload,{signal:analysisController.signal,onProgress:message=>status(message)});
+  analysisController=new AbortController();
+  showingProgress=true;people=[];projected=[];renderPeople();canvas.hidden=true;$('empty-plot').hidden=true;
+  $('sample').textContent='READING THREAD';$('people-badge').textContent='WAITING';$('coverage').textContent='';
+  $('detail').textContent='Posters and their opinion estimates will appear when analysis is complete.';
+  progress.start();status('Fetching this thread and counting its posts…');
+  const result=await analyze(payload,{signal:analysisController.signal,onPost:post=>progress.add(post),onProgress:message=>{status(message);progress.stage(message);}});
   if(!Array.isArray(result.people)||result.people.some(p=>!Number.isInteger(p.count)||p.count<1||typeof p.name!=='string'))throw Error('The analysis returned invalid results.');
-  people=result.people;demo=false;renderPeople();reset();
+  showingProgress=false;progress.hide();canvas.hidden=false;people=result.people;demo=false;renderPeople();reset();
   $('sample').textContent=`${result.platform.toUpperCase()} · ${people.length} POSTERS · ${result.totalPosts} POSTS`;
   $('people-badge').textContent='MODEL ESTIMATES';
   $('coverage').textContent=`${result.totalPosts} retrieved posts by ${result.totalAuthors} authors. Top ${people.length} ranked by retrieved post count. ${result.warnings.join(' ')} Scope: ${result.url}`;
   const unknown=people.filter(p=>!classified(p)).length;
   status(`Analyzed with ${result.model}. ${people.length-unknown} plotted${unknown?`; ${unknown} unclassified (insufficient evidence)`:''}. Frequency is the count of retrieved posts, not an LLM estimate.`);
- }catch(e){status(e.name==='AbortError'?'Analysis cancelled. Previous graph retained.':e.message,e.name!=='AbortError');}
+ }catch(e){
+  const message=e.name==='AbortError'?'Analysis cancelled.':e.message;
+  if(showingProgress){progress.stop(message);$('sample').textContent='NO ANALYSIS RESULTS';$('people-badge').textContent='NO RESULTS';$('detail').textContent='Start another analysis or load a demo crowd.';}
+  status(message,e.name!=='AbortError');
+ }
  finally{busy=false;$('fields').disabled=false;$('shuffle').disabled=false;$('cancel').hidden=true;$('analyze').disabled=!$('model').value;analysisController=null;}
 };
 generateDemo();

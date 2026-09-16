@@ -28,7 +28,9 @@ test('Bluesky follows reply edges and ignores embedded or parent material; marks
 });
 test('Bluesky expands a truncated descendant subtree without leaving the branch',async()=>{
  const nested=bskyNode('child','root',[],1),leaf=bskyNode('leaf','child');
- const result=await fetchBluesky(parseThreadURL('https://bsky.app/profile/did:plc:abc/post/root'),{request:async url=>({thread:new URL(url).searchParams.get('uri').endsWith('/root')?bskyNode('root',null,[nested]):bskyNode('child','root',[leaf])})});
+ const discovered=[];
+ const result=await fetchBluesky(parseThreadURL('https://bsky.app/profile/did:plc:abc/post/root'),{onPost:p=>discovered.push(p),request:async url=>({thread:new URL(url).searchParams.get('uri').endsWith('/root')?bskyNode('root',null,[nested]):bskyNode('child','root',[leaf])})});
+ assert.deepEqual(discovered.map(p=>p.id),result.posts.map(p=>p.id));
  assert.equal(result.posts.length,3);assert.equal(result.incomplete,false);
 });
 test('model evidence must match the supplied author and literal text; no evidence means no placement',()=>{

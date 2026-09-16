@@ -19,7 +19,7 @@ The three axes are:
 - **Outlook:** 0 = catastrophe/extinction; 100 = prosperity/utopia.
 - **Frequency (height):** actual retrieved post count, computed in the browser—not estimated by the LLM.
 
-Drag or use arrow keys to rotate, pinch with two fingers, scroll, or use +/− to zoom, and press 0 to reset. Mobile graph labels use a smaller font; one finger rotates and two fingers zoom without rotating. Top-down view hides height; counts remain in the people list. Posters with insufficient evidence remain in the top-20 list as unclassified and are not placed at an invented neutral position. Failed/cancelled analysis preserves the previous graph.
+Drag or use arrow keys to rotate, pinch with two fingers, scroll, or use +/− to zoom, and press 0 to reset. Mobile graph labels use a smaller font; one finger rotates and two fingers zoom without rotating. Top-down view hides height; counts remain in the people list. Posters with insufficient evidence remain in the top-20 list as unclassified and are not placed at an invented neutral position. Starting analysis clears the previous graph and people. The graph panel shows discovered posters with animated, deduplicated retrieved-post counts (up to 20 cards), then a pulsing model-analysis stage. The finished graph appears only after validated results arrive. Failed or cancelled analysis leaves a stopped progress view; retry or load a new demo crowd. Reduced-motion preferences disable the animations.
 
 ## Architecture and key handling
 

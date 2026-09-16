@@ -5,7 +5,7 @@
 <meta name="referrer" content="no-referrer">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self' https:; img-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
 <title>The AI Opinion Map</title>
-<link rel="stylesheet" href="style.css?v=provider-colors-1">
+<link rel="stylesheet" href="style.css?v=live-progress-1">
 </head>
 <body>
 <main class="workspace" aria-label="AI opinion map">
@@ -24,7 +24,12 @@
 <div class="status-row"><p id="status" role="status" aria-live="polite">Demo data. Enter your provider key and a Bluesky thread URL to begin.</p><button id="cancel" type="button" hidden>Cancel</button></div>
 <p class="privacy">Your key is kept in this page’s memory and sent only to the selected provider. No backend or saved keys. The provider must allow browser requests (CORS). Analyze sends this thread’s text to that provider and may incur charges. No DMs or profile history.</p>
 </form></div>
-<div class="canvas-wrap"><canvas id="plot" tabindex="0" aria-label="3D opinion graph. Drag or use arrow keys to rotate. Pinch, scroll, or use plus and minus to zoom. Potential and outlook form the floor; height is retrieved post count. Select people from the list to inspect evidence." aria-describedby="scores"></canvas><div id="empty-plot" hidden>No posters have enough evidence for both opinion axes. See their counts in The People.</div></div>
+<div class="canvas-wrap"><div id="thread-progress" hidden>
+<div class="progress-heading"><span class="working-dot"></span><h2 id="progress-title">Discovering posters</h2></div>
+<p id="progress-summary" role="status">Connecting to Bluesky…</p>
+<div id="progress-posters"></div>
+<p id="progress-note">Post counts appear as this thread is retrieved. Opinion positions appear after analysis.</p>
+</div><canvas id="plot" tabindex="0" aria-label="3D opinion graph. Drag or use arrow keys to rotate. Pinch, scroll, or use plus and minus to zoom. Potential and outlook form the floor; height is retrieved post count. Select people from the list to inspect evidence." aria-describedby="scores"></canvas><div id="empty-plot" hidden>No posters have enough evidence for both opinion axes. See their counts in The People.</div></div>
 <div class="plot-tools"><span>Drag to rotate · Pinch or scroll to zoom</span><div><button id="reset" type="button">Reset view</button><button id="top" type="button" aria-pressed="false">Top-down</button></div></div>
 <p id="coverage"></p><p id="scores" class="sr-only"></p>
 </section>
@@ -34,5 +39,5 @@
 <div id="people"></div><div id="detail" aria-live="polite"></div><button id="shuffle" type="button">New demo crowd ↗</button>
 </aside>
 </main>
-<script src="app.js?v=mobile-pinch-1" type="module"></script>
+<script src="app.js?v=live-progress-1" type="module"></script>
 </body></html>
