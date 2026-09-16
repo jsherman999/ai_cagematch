@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>The AI Opinion Map</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main>
+<header><a class="brand" href="./"><span class="brand-icon">✳</span> FIELD NOTES <span class="edition">/ 001</span></a><span class="badge"><i></i> AN EXPERIMENT IN PERSPECTIVE</span></header>
+<section class="intro"><p class="eyebrow">MAPPING THE AI ARGUMENT</p><h1>Same technology.<br><span>Different futures.</span></h1><p class="lede">How much could AI change the world? And would that change be good?<br>Explore where ten imaginary people land.</p></section>
+<section class="workspace" aria-label="Interactive AI opinion map">
+<div class="plot-panel"><div class="plot-top"><span><i class="live-dot"></i> THE OPINION MAP</span><span class="muted">10 PEOPLE · 2 AXES · 3D VIEW</span></div>
+<div class="canvas-wrap"><canvas id="plot" tabindex="0" aria-label="Rotatable opinion map. Drag or use arrow keys to rotate. Use plus and minus to zoom. Select people from the adjacent list."></canvas><div class="view-tag" id="view-tag">PERSPECTIVE VIEW</div><div class="hint">↔ Drag to rotate <span>·</span> Scroll to zoom</div></div>
+<div class="toolbar"><div><button id="perspective" class="active" aria-pressed="true">3D perspective</button><button id="top" aria-pressed="false">Top-down</button></div><div><button id="zoom-out" aria-label="Zoom out">−</button><button id="zoom-in" aria-label="Zoom in">+</button><button id="reset">Reset view ↺</button></div></div></div>
+<aside><div class="aside-heading"><h2>The people</h2><span>FICTIONAL SAMPLE</span></div><p class="aside-copy">Pick a person to see their perspective.</p><div id="people"></div><div id="detail" aria-live="polite"></div><button id="shuffle" class="shuffle">Generate a new crowd <span>↗</span></button></aside>
+</section>
+<section class="explanation"><article><span class="axis-label mint">01 / POTENTIAL</span><h3>How big is the change?</h3><p><strong>Low:</strong> “It’s just text completion.”<br><strong>High:</strong> Strange, uncertain, and capable of enormous good or harm.</p></article><article><span class="axis-label lavender">02 / OUTLOOK</span><h3>Which future do you see?</h3><p><strong>Doomer:</strong> Catastrophe, potentially extinction.<br><strong>Pollyanna:</strong> Widespread prosperity, potentially utopia.</p></article><article class="note"><span class="axis-label">A NOTE ON DIMENSIONS</span><p>Two opinions make a plane. This map lets you rotate that plane in 3D; depth is a viewing effect, not a third belief. All names and scores are randomly generated, not claims about real people.</p></article></section>
+<footer><span>THE AI OPINION MAP</span><span>A conversation starter, not a scientific model.</span></footer>
+</main><script src="app.js"></script>
+</body></html>
