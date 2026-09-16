@@ -94,3 +94,39 @@ test('LLM key is never sent to Bluesky and no request leaves the two chosen API 
  const result=await analyze({endpoint:'https://provider.example/v1',apiKey:'test-key',model:'chosen-model',url:'https://bsky.app/profile/did:plc:abc/post/root'},{request});
  assert.equal(calls.length,2);assert.equal(result.people[0].count,1);
 });
+
+test('poster requests run two at a time, use five minutes, and keep ranked results despite completion order',async()=>{
+ const events=[],pending=[];let inFlight=0,maxInFlight=0;
+ const request=async(url,options)=>{
+  if(url.includes('getPostThread'))return {thread:bskyNode('root',null,[bskyNode('a','root'),bskyNode('b','root')])};
+  assert.equal(options.timeoutMs,300_000);
+  const authors=JSON.parse(options.body.messages[1].content).authors;assert.equal(authors.length,1);
+  inFlight++;maxInFlight=Math.max(maxInFlight,inFlight);
+  await new Promise(resolve=>pending.push(resolve));inFlight--;
+  return {choices:[{message:{content:JSON.stringify({assessments:[{authorId:authors[0].authorId,potential:null,outlook:null,confidence:'low',rationale:'Unknown',evidence:[]}]})}}]};
+ };
+ const run=analyze({endpoint:'https://provider.example/v1',apiKey:'test',model:'model',url:'https://bsky.app/profile/did:plc:abc/post/root'},{request,onAssessment:e=>events.push(e)});
+ await new Promise(resolve=>setImmediate(resolve));assert.equal(pending.length,2);
+ pending[1]();await new Promise(resolve=>setImmediate(resolve));assert.equal(pending.length,3);
+ pending[2]();pending[0]();const result=await run;
+ assert.equal(maxInFlight,2);assert.deepEqual(result.people.map(p=>p.id),['did:plc:a','did:plc:b','did:plc:root']);
+ assert.deepEqual(events.filter(e=>e.state==='done').map(e=>e.completed),[1,2,3]);
+ assert.equal(events.filter(e=>e.state==='active').length,3);
+});
+test('a failed poster stops its sibling request and never schedules remaining posters',async()=>{
+ let llmCalls=0,aborted=false;
+ const request=async(url,options)=>{
+  if(url.includes('getPostThread'))return {thread:bskyNode('root',null,[bskyNode('a','root'),bskyNode('b','root')])};
+  llmCalls++;
+  if(llmCalls===1){await new Promise(resolve=>setImmediate(resolve));throw Error('Provider failure');}
+  return new Promise((_,reject)=>options.signal.addEventListener('abort',()=>{aborted=true;reject(new DOMException('Cancelled','AbortError'));},{once:true}));
+ };
+ await assert.rejects(analyze({endpoint:'https://provider.example/v1',apiKey:'test',model:'model',url:'https://bsky.app/profile/did:plc:abc/post/root'},{request}),/Provider failure/);
+ assert.equal(llmCalls,2);assert.equal(aborted,true);
+});
+test('configured request timeout reports its actual duration',async()=>{
+ // Hold the event loop open while AbortSignal's unref'ed timer fires.
+ const hold=setTimeout(()=>{},1000);
+ try{await assert.rejects(jsonRequest('https://provider.example/v1',{timeoutMs:5,service:'LLM analysis',fetchImpl:async(_url,{signal})=>new Promise((_,reject)=>signal.addEventListener('abort',()=>reject(signal.reason),{once:true}))}),/timed out after 0 seconds/);}
+ finally{clearTimeout(hold);}
+});

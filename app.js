@@ -1,7 +1,7 @@
-import { createThreadProgress } from './lib/progress.js';
+import { createThreadProgress } from './lib/progress.js?v=poster-progress-1';
 import { installGraphGestures } from './lib/gestures.js';
 import { providers, detectProvider, selectProvider } from './lib/providers.js';
-import { listModels, analyze } from './lib/analysis.js?v=live-progress-1';
+import { listModels, analyze } from './lib/analysis.js?v=poster-progress-1';
 import { parseThreadURL } from './lib/threads.js';
 
 const $=id=>document.getElementById(id);
@@ -145,7 +145,7 @@ $('analysis-form').onsubmit=async event=>{
   $('sample').textContent='READING THREAD';$('people-badge').textContent='WAITING';$('coverage').textContent='';
   $('detail').textContent='Posters and their opinion estimates will appear when analysis is complete.';
   progress.start();status('Fetching this thread and counting its posts…');
-  const result=await analyze(payload,{signal:analysisController.signal,onPost:post=>progress.add(post),onProgress:message=>{status(message);progress.stage(message);}});
+  const result=await analyze(payload,{signal:analysisController.signal,onPost:post=>progress.add(post),onAssessment:event=>progress.assessment(event),onProgress:message=>{status(message);progress.stage(message);}});
   if(!Array.isArray(result.people)||result.people.some(p=>!Number.isInteger(p.count)||p.count<1||typeof p.name!=='string'))throw Error('The analysis returned invalid results.');
   showingProgress=false;progress.hide();canvas.hidden=false;people=result.people;demo=false;renderPeople();reset();
   $('sample').textContent=`${result.platform.toUpperCase()} · ${people.length} POSTERS · ${result.totalPosts} POSTS`;

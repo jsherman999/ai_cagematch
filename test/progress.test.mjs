@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { createThreadProgress } from '../lib/progress.js';
 function fixture(){
  class Node{
-  children=[];textContent='';hidden=false;classList={add(){},remove(){}};
+  children=[];textContent='';hidden=false;classList={values:new Set(),add(...names){names.forEach(n=>this.values.add(n));},remove(...names){names.forEach(n=>this.values.delete(n));}};
   append(...nodes){for(const n of nodes){n.remove();n.parentNode=this;this.children.push(n);}}
   remove(){if(this.parentNode){this.parentNode.children=this.parentNode.children.filter(n=>n!==this);this.parentNode=null;}}
   replaceChildren(){for(const n of [...this.children])n.remove();}
@@ -37,4 +37,17 @@ test('model wait retains retrieved counts and replaces the discovery heading',t=
  assert.match(get('progress-summary').textContent,/1 retrieved post · 1 poster/);
  t.mock.timers.tick(8000);assert.match(get('progress-summary').textContent,/1 retrieved post · 1 poster/);
  progress.hide();
+});
+test('active and completed cards reflect assessment events and reset on cancellation/restart',()=>{
+ const {progress,get}=fixture();progress.start();
+ progress.add({id:'1',authorId:'a',name:'Alice'});progress.add({id:'2',authorId:'b',name:'Bob'});
+ progress.assessment({id:'a',state:'active',completed:0,total:2});
+ progress.assessment({id:'b',state:'active',completed:0,total:2});
+ const [a,b]=get('progress-posters').children;
+ assert.ok(a.classList.values.has('assessing'));assert.ok(b.classList.values.has('assessing'));
+ progress.assessment({id:'b',state:'done',completed:1,total:2});
+ assert.ok(!b.classList.values.has('assessing'));assert.ok(b.classList.values.has('assessed'));
+ assert.equal(get('progress-title').textContent,'Mapping opinions · 1/2 complete');
+ progress.stop('Cancelled');assert.ok(!a.classList.values.has('assessing'));
+ progress.start();assert.equal(get('progress-posters').children.length,0);progress.hide();
 });

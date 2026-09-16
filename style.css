@@ -29,3 +29,7 @@ aside .evidence{background:#152134;border-left-color:#6380a4}
 @keyframes working{50%{opacity:.3;box-shadow:0 0 16px #b5edcb88}}
 @media(max-width:600px){#thread-progress{padding:20px}#progress-posters{gap:6px;margin:16px 0}.discovered-poster{padding:8px}}
 @media(prefers-reduced-motion:reduce){.discovered-poster,.working-dot{animation:none}}
+.discovered-poster.assessing{background:#692f35;border-color:#df858a;box-shadow:0 0 12px #cf657322}
+.discovered-poster.assessing .discovered-name{color:#ffe3e3}
+.discovered-poster.assessed{background:#234b34;border-color:#70b889}
+.discovered-poster.assessment-stopped{border-color:#df858a}
