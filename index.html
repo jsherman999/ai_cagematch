@@ -5,24 +5,25 @@
 <meta name="referrer" content="no-referrer">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self' https:; img-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
 <title>The AI Opinion Map</title>
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="style.css?v=provider-colors-1">
 </head>
 <body>
 <main class="workspace" aria-label="AI opinion map">
 <section class="plot-panel" aria-label="The opinion map">
-<header><h1><span class="live-dot"></span>THE OPINION MAP</h1><span id="sample">DEMO · 20 FICTIONAL PEOPLE</span></header>
+<div class="entry-panel"><header><h1><span class="live-dot"></span>THE OPINION MAP</h1><span id="sample">DEMO · 20 FICTIONAL PEOPLE</span></header>
 <form id="analysis-form">
 <fieldset id="fields">
 <div class="input-grid">
-<label>LLM API endpoint<input id="endpoint" type="url" placeholder="https://api.openai.com/v1" value="https://api.openai.com/v1" required spellcheck="false"></label>
-<label>Provider API key<input id="api-key" type="password" placeholder="API key" autocomplete="off" required></label>
+<label>Provider API key<input id="api-key" type="password" placeholder="Paste your API key" autocomplete="off" required aria-describedby="provider-hint"></label>
+<label>LLM provider<select id="provider"><option value="">Detect from key / choose provider</option></select></label>
+<p id="provider-hint" class="provider-hint" aria-live="polite">Recognizable keys are detected locally. Otherwise, choose a provider by name.</p>
 <label class="thread-input">Public Bluesky thread URL<input id="thread-url" type="url" placeholder="https://bsky.app/profile/…/post/…" required spellcheck="false"></label>
 </div>
 <div class="model-row"><label>Model<select id="model" disabled><option value="">Enter key and thread URL to load models</option></select></label><button id="load-models" type="button">Load models</button><button id="analyze" type="submit" class="primary" disabled>Analyze thread ↗</button></div>
 </fieldset>
 <div class="status-row"><p id="status" role="status" aria-live="polite">Demo data. Enter your provider key and a Bluesky thread URL to begin.</p><button id="cancel" type="button" hidden>Cancel</button></div>
-<p class="privacy">Your key is kept in this page’s memory and sent only to the provider endpoint above. No backend or saved keys. The provider must allow browser requests (CORS). Analyze sends this thread’s text to that provider and may incur charges. No DMs or profile history.</p>
-</form>
+<p class="privacy">Your key is kept in this page’s memory and sent only to the selected provider. No backend or saved keys. The provider must allow browser requests (CORS). Analyze sends this thread’s text to that provider and may incur charges. No DMs or profile history.</p>
+</form></div>
 <div class="canvas-wrap"><canvas id="plot" tabindex="0" aria-label="3D opinion graph. Drag or use arrow keys to rotate. Scroll or use plus and minus to zoom. Potential and outlook form the floor; height is retrieved post count. Select people from the list to inspect evidence." aria-describedby="scores"></canvas><div id="empty-plot" hidden>No posters have enough evidence for both opinion axes. See their counts in The People.</div></div>
 <div class="plot-tools"><span>Drag to rotate · Scroll to zoom</span><div><button id="reset" type="button">Reset view</button><button id="top" type="button" aria-pressed="false">Top-down</button></div></div>
 <p id="coverage"></p><p id="scores" class="sr-only"></p>
@@ -33,5 +34,5 @@
 <div id="people"></div><div id="detail" aria-live="polite"></div><button id="shuffle" type="button">New demo crowd ↗</button>
 </aside>
 </main>
-<script src="app.js" type="module"></script>
+<script src="app.js?v=provider-colors-1" type="module"></script>
 </body></html>

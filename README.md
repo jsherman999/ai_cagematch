@@ -6,7 +6,7 @@ A Bluesky-only, browser-only app. No backend, Docker, proxy, build step, or runt
 
 ## Use
 
-1. Enter an OpenAI-compatible HTTPS API base URL, such as `https://api.openai.com/v1`, and your own provider key.
+1. Paste your provider API key. Recognizable prefixes select the provider automatically; otherwise select its name from the dropdown. No endpoint URL is needed.
 2. Paste an individual public Bluesky post URL (`https://bsky.app/profile/…/post/…`).
 3. The browser fetches the provider's model list. Choose a text chat model, then click **Analyze thread**.
 4. Inspect the top 20 posters, ranked by the number of retrieved posts in that thread. Select a poster to see scores, confidence, rationale, and supporting post links.
@@ -26,13 +26,17 @@ Drag or use arrow keys to rotate, scroll or use +/− to zoom, and press 0 to re
 ```text
 Browser on GitHub Pages
   ├── public.api.bsky.app: retrieve the linked thread, without credentials
-  ├── chosen LLM endpoint: GET /models and POST /chat/completions
+  ├── selected LLM provider: list models and analyze posts directly
   └── local computation: counts, top 20, evidence checks, and 3D rendering
 ```
 
-The API key is held only in the current page's memory and sent in the Authorization header directly to the endpoint you enter. The app does not use localStorage, sessionStorage, cookies, analytics, or an intermediary server. The key is never sent to Bluesky or GitHub. No requests are made on initial load except the app's own static assets. Credentials are not embedded in the repository. The page code can access an entered key while running; use only a site and provider endpoint you trust.
+The API key is held only in the current page's memory and sent in the Authorization header directly to the selected provider’s built-in endpoint. The app does not use localStorage, sessionStorage, cookies, analytics, or an intermediary server. The key is never sent to Bluesky or GitHub. No requests are made on initial load except the app's own static assets. Credentials are not embedded in the repository. The page code can access an entered key while running; use only a site and provider you trust.
 
-**Your provider must permit browser requests (CORS)** for its model-list and chat endpoints, including Authorization and Content-Type headers. OpenAI-compatible does not automatically mean browser-compatible. If access is blocked, the app reports it explicitly and never falls back to a proxy. Provider endpoints must use HTTPS without URL credentials, query strings, or redirects. Provider keys and API usage are billed by the provider; submitted text is subject to its policies.
+Recognized key prefixes: OpenAI project/service-account keys (`sk-proj-`, `sk-svcacct-`), Anthropic API keys (`sk-ant-api…-`), OpenRouter (`sk-or-v1-`), Groq (`gsk_`), and xAI (`xai-`). Detection is a local format hint, not authentication. Generic `sk-` keys and Google-style `AIza` keys are ambiguous and require selection; the app never tries a key against several services. A known prefix conflicting with the chosen provider is rejected before a request. Changing the key clears any previous manual selection.
+
+Provider presets include OpenAI, Anthropic, OpenRouter, Groq, xAI, Google Gemini, DeepSeek, and Mistral. Anthropic uses its native Models and Messages APIs; the others use OpenAI-compatible APIs. Preset availability is not a guarantee of CORS access or model permissions. API formats can change, and live access requires a valid key.
+
+**Your provider must permit browser requests (CORS)** for its model-list and chat endpoints, including its authentication and Content-Type headers. Anthropic uses its supported direct-browser opt-in header. OpenAI-compatible does not automatically mean browser-compatible. If access is blocked, the app reports it explicitly and never falls back to a proxy. Provider endpoints must use HTTPS without URL credentials, query strings, or redirects. Provider keys and API usage are billed by the provider; submitted text is subject to its policies.
 
 ## Scope and limitations
 
@@ -61,6 +65,6 @@ npm test
 
 No package installation is needed. Keep GitHub Pages set to deploy `main` from `/ (root)`. Publish `index.html`, `style.css`, `app.js`, the `lib/` folder, and `.nojekyll`. Relative imports work under `/ai_cagematch/`. There is no backend URL to configure.
 
-Tests cover Bluesky URL restrictions, scope, incomplete replies, deterministic frequency/ranking, sampling, evidence validation, direct model requests, key routing, CORS failures, and cancellation. Browser fixture tests exercise model selection, rendering, and error handling. Live paid LLM analysis still requires your credentials.
+Tests cover local provider detection, ambiguous-key handling, credential routing, Anthropic messages/pagination, Bluesky URL restrictions, scope, incomplete replies, deterministic frequency/ranking, sampling, evidence validation, direct model requests, key routing, CORS failures, and cancellation. Browser fixture tests exercise model selection, rendering, and error handling. Live paid LLM analysis still requires your credentials.
 
 References: [Bluesky thread API schema](https://github.com/bluesky-social/atproto/blob/main/lexicons/app/bsky/feed/getPostThread.json), [OpenAI-compatible model list](https://developers.openai.com/api/reference/resources/models/methods/list), [chat completions](https://developers.openai.com/api/reference/resources/chat/subresources/completions/methods/create), [CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/CORS).

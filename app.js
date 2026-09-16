@@ -1,4 +1,5 @@
-import { listModels, analyze } from './lib/analysis.js';
+import { providers, detectProvider, selectProvider } from './lib/providers.js';
+import { listModels, analyze } from './lib/analysis.js?v=provider-colors-1';
 import { parseThreadURL } from './lib/threads.js';
 
 const $=id=>document.getElementById(id);
@@ -97,11 +98,11 @@ new ResizeObserver(()=>{const rect=canvas.getBoundingClientRect();width=rect.wid
 let loadController=null,analysisController=null,loadVersion=0,debounce,busy=false;
 function status(message,error=false){$('status').textContent=message;$('status').classList.toggle('error',error);}
 function targetURL(){return parseThreadURL($('thread-url').value.trim());}
-function input(){return {endpoint:$('endpoint').value.trim(),apiKey:$('api-key').value.trim(),url:targetURL().url,model:$('model').value};}
+function input(){const apiKey=$('api-key').value.trim();const provider=selectProvider($('provider').value,apiKey);return {provider:provider.id,apiKey,url:targetURL().url,model:$('model').value};}
 function clearModels(){loadVersion++;loadController?.abort();$('model').replaceChildren(new Option('Enter key and thread URL to load models',''));$('model').disabled=true;$('analyze').disabled=true;}
 function fieldsChanged(){
  clearTimeout(debounce);clearModels();
- if($('endpoint').value&&$('api-key').value&&$('thread-url').value){try{targetURL();debounce=setTimeout(loadModels,700);}catch(e){status(e.message,true);}}
+ if($('provider').value&&$('api-key').value&&$('thread-url').value){try{targetURL();debounce=setTimeout(loadModels,700);}catch(e){status(e.message,true);}}
 }
 async function loadModels(){
  clearTimeout(debounce);if(busy)return;clearModels();const version=loadVersion;loadController=new AbortController();
@@ -112,7 +113,14 @@ async function loadModels(){
   status(`${result.models.length} models loaded. Choose a text chat model, then analyze the thread.`);
  }catch(e){if(e.name!=='AbortError'&&version===loadVersion)status(e.message,true);}
 }
-for(const id of ['endpoint','api-key','thread-url'])$(id).addEventListener('input',fieldsChanged);
+for(const p of providers)$('provider').append(new Option(p.name,p.id));
+function updateProviderHint(detected=false){
+ const key=$('api-key').value.trim(),provider=providers.find(p=>p.id===$('provider').value);
+ $('provider-hint').textContent=provider?`${detected?'Detected':'Selected'}: ${provider.name}. Your key goes only to this provider.`:key?'Provider not identifiable from this key. Choose its provider above; nothing has been sent.':'Recognizable keys are detected locally. Otherwise, choose a provider by name.';
+}
+$('api-key').addEventListener('input',()=>{$('provider').value=detectProvider($('api-key').value)||'';updateProviderHint(Boolean($('provider').value));fieldsChanged();});
+$('provider').addEventListener('change',()=>{updateProviderHint();fieldsChanged();});
+$('thread-url').addEventListener('input',fieldsChanged);
 $('load-models').onclick=loadModels;$('model').onchange=()=>{$('analyze').disabled=!$('model').value||busy;};
 $('cancel').onclick=()=>analysisController?.abort();
 $('analysis-form').onsubmit=async event=>{
