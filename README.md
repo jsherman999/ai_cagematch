@@ -1,21 +1,66 @@
-# The AI Opinion Map
+# AI Opinion Map
 
-A dependency-free, 2D quadrant map with ten randomly generated fictional people. The page contains only the graph and people panels. The view is fixed and top-down. Click a person in the graph or list to inspect their scores, or focus the graph and use arrow keys. A screen-reader description includes every person’s scores.
+**[Open the app on GitHub Pages](https://jsherman999.github.io/ai_cagematch/)**
 
-- **Potential:** 0 = low / just text completion; 100 = high / transformative and uncertain.
-- **Outlook:** 0 = doomer / extinction; 100 = Pollyanna / utopia.
+A Bluesky-only, browser-only app. No backend, Docker, proxy, build step, or runtime dependencies are required.
 
-All names and positions are fictional and generated anew on reload or with “Generate a new crowd.” Nothing is sent to a server or saved.
+## Use
 
-## Run locally
+1. Enter an OpenAI-compatible HTTPS API base URL, such as `https://api.openai.com/v1`, and your own provider key.
+2. Paste an individual public Bluesky post URL (`https://bsky.app/profile/…/post/…`).
+3. The browser fetches the provider's model list. Choose a text chat model, then click **Analyze thread**.
+4. Inspect the top 20 posters, ranked by the number of retrieved posts in that thread. Select a poster to see scores, confidence, rationale, and supporting post links.
 
-Open `index.html` directly, or serve this folder with `python3 -m http.server 8000` and visit http://localhost:8000.
+The initial graph contains **20 fictional demo posters** and works without a key. **New demo crowd** regenerates that sample without network calls. Demo data is always labeled.
 
-## GitHub Pages
+The three axes are:
 
-1. Add `index.html`, `style.css`, `app.js`, and `.nojekyll` to a GitHub repository and push them to your default branch.
-2. In the repository, open **Settings → Pages**.
-3. Choose **Deploy from a branch**, select your branch and **/ (root)**, and save.
-4. Open the URL GitHub supplies after deployment completes.
+- **Potential:** 0 = little transformative potential; 100 = enormous potential for good or harm.
+- **Outlook:** 0 = catastrophe/extinction; 100 = prosperity/utopia.
+- **Frequency (height):** actual retrieved post count, computed in the browser—not estimated by the LLM.
 
-No build step, package install, API keys, CDN dependencies, or backend are required. Relative asset paths work on repository and custom-domain Pages sites.
+Drag or use arrow keys to rotate, scroll or use +/− to zoom, and press 0 to reset. Top-down view hides height; counts remain in the people list. Posters with insufficient evidence remain in the top-20 list as unclassified and are not placed at an invented neutral position. Failed/cancelled analysis preserves the previous graph.
+
+## Architecture and key handling
+
+```text
+Browser on GitHub Pages
+  ├── public.api.bsky.app: retrieve the linked thread, without credentials
+  ├── chosen LLM endpoint: GET /models and POST /chat/completions
+  └── local computation: counts, top 20, evidence checks, and 3D rendering
+```
+
+The API key is held only in the current page's memory and sent in the Authorization header directly to the endpoint you enter. The app does not use localStorage, sessionStorage, cookies, analytics, or an intermediary server. The key is never sent to Bluesky or GitHub. No requests are made on initial load except the app's own static assets. Credentials are not embedded in the repository. The page code can access an entered key while running; use only a site and provider endpoint you trust.
+
+**Your provider must permit browser requests (CORS)** for its model-list and chat endpoints, including Authorization and Content-Type headers. OpenAI-compatible does not automatically mean browser-compatible. If access is blocked, the app reports it explicitly and never falls back to a proxy. Provider endpoints must use HTTPS without URL credentials, query strings, or redirects. Provider keys and API usage are billed by the provider; submitted text is subject to its policies.
+
+## Scope and limitations
+
+- Only the linked Bluesky post and its descendants connected by reply edges are included. A reply URL stays within that reply's branch. Ancestors, siblings outside the branch, feeds, profiles, DMs, X URLs, and other sites are excluded.
+- Handles are resolved through Bluesky's public API. `getPostThread` uses `parentHeight=0`; missing descendant subtrees are fetched separately. Linked articles, embedded quoted posts, images, videos, and profile history are not fetched or interpreted. Analysis is text-only.
+- Retrieval is limited to **500 posts and 40 thread requests**. Bluesky may hide, delete, or cap replies and does not guarantee exhaustive pagination. Detected incomplete coverage is labeled; all counts and rankings refer to **retrieved** posts. The root post counts as one post. Ties use stable author IDs.
+- The model receives only the top posters' supplied text, grouped under temporary author labels. Names/handles are omitted from the grouping metadata to reduce reputation-based judgments, though platform IDs and text itself can still identify authors.
+- Model input is bounded to 6,000 characters per author and 2,000 per post. Sampling is disclosed; frequency still counts all retrieved posts.
+- Model responses require bounded scores or null, confidence, rationale, and evidence. Quotes must match text actually supplied from that author. Missing verifiable evidence produces unknown scores. These are subjective estimates of views expressed in this thread, not facts about a person's overall beliefs.
+- Thread text is untrusted input. The model is instructed not to follow embedded commands, has no browsing tools, and cannot choose further resources. The page renders names, rationale, and evidence as text, not HTML.
+- Model listings can include non-chat models; choose a text model capable of following JSON instructions. Large contexts, rate limits, provider permissions, CORS, and interrupted browser sessions can prevent analysis. Requests have time and response-size limits.
+
+## Development and deployment
+
+Serve the folder locally (ES modules require an HTTP server):
+
+```sh
+python3 -m http.server 8000
+```
+
+Open http://localhost:8000. For tests, use Node.js 22+:
+
+```sh
+npm test
+```
+
+No package installation is needed. Keep GitHub Pages set to deploy `main` from `/ (root)`. Publish `index.html`, `style.css`, `app.js`, the `lib/` folder, and `.nojekyll`. Relative imports work under `/ai_cagematch/`. There is no backend URL to configure.
+
+Tests cover Bluesky URL restrictions, scope, incomplete replies, deterministic frequency/ranking, sampling, evidence validation, direct model requests, key routing, CORS failures, and cancellation. Browser fixture tests exercise model selection, rendering, and error handling. Live paid LLM analysis still requires your credentials.
+
+References: [Bluesky thread API schema](https://github.com/bluesky-social/atproto/blob/main/lexicons/app/bsky/feed/getPostThread.json), [OpenAI-compatible model list](https://developers.openai.com/api/reference/resources/models/methods/list), [chat completions](https://developers.openai.com/api/reference/resources/chat/subresources/completions/methods/create), [CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/CORS).
