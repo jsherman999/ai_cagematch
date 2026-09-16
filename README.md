@@ -1,13 +1,11 @@
 # The AI Opinion Map
 
-A dependency-free, interactive opinion map with ten randomly generated fictional people. Drag to rotate the plane in 3D, scroll or use buttons to zoom, and click a person to inspect their scores. Touch dragging and keyboard controls are supported (focus the graph, then use arrow keys, +/−, or 0 to reset).
-
-Two independent opinions require only two data dimensions. The graph presents that plane in a rotatable 3D perspective without inventing a third score:
+A dependency-free, 2D quadrant map with ten randomly generated fictional people. The page contains only the graph panel, names, and axis labels. The view is fixed and top-down; a screen-reader description includes every person’s scores.
 
 - **Potential:** 0 = low / just text completion; 100 = high / transformative and uncertain.
 - **Outlook:** 0 = doomer / extinction; 100 = Pollyanna / utopia.
 
-All names and positions are fictional and generated anew on reload or with “Generate a new crowd.” Nothing is sent to a server or saved.
+All names and positions are fictional and generated anew on reload. Nothing is sent to a server or saved.
 
 ## Run locally
 
