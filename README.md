@@ -1,11 +1,11 @@
 # The AI Opinion Map
 
-A dependency-free, 2D quadrant map with ten randomly generated fictional people. The page contains only the graph panel, names, and axis labels. The view is fixed and top-down; a screen-reader description includes every person’s scores.
+A dependency-free, 2D quadrant map with ten randomly generated fictional people. The page contains only the graph and people panels. The view is fixed and top-down. Click a person in the graph or list to inspect their scores, or focus the graph and use arrow keys. A screen-reader description includes every person’s scores.
 
 - **Potential:** 0 = low / just text completion; 100 = high / transformative and uncertain.
 - **Outlook:** 0 = doomer / extinction; 100 = Pollyanna / utopia.
 
-All names and positions are fictional and generated anew on reload. Nothing is sent to a server or saved.
+All names and positions are fictional and generated anew on reload or with “Generate a new crowd.” Nothing is sent to a server or saved.
 
 ## Run locally
 

@@ -6,10 +6,12 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<main class="plot-panel" aria-label="AI opinion map">
+<main class="workspace" aria-label="AI opinion map"><section class="plot-panel" aria-label="The opinion map">
 <header><h1><span class="live-dot"></span>THE OPINION MAP</h1><span class="sample">10 FICTIONAL PEOPLE · 2 AXES</span></header>
-<div class="canvas-wrap"><canvas id="plot" role="img" aria-label="AI opinion quadrants. Left: low potential. Right: high potential. Top: Pollyanna. Bottom: doomer." aria-describedby="scores"></canvas></div>
+<div class="canvas-wrap"><canvas id="plot" tabindex="0" aria-label="AI opinion quadrants. Left: low potential. Right: high potential. Top: Pollyanna. Bottom: doomer. Click a person or use arrow keys to select them." aria-describedby="scores"></canvas></div>
 <p id="scores" class="sr-only"></p>
+</section>
+<aside><div class="aside-heading"><h2>The people</h2><span>FICTIONAL SAMPLE</span></div><p class="aside-copy">Pick a person to see their perspective.</p><div id="people"></div><div id="detail" aria-live="polite"></div><button id="shuffle" class="shuffle">Generate a new crowd <span>↗</span></button></aside>
 </main>
 <script src="app.js"></script>
 </body></html>
