@@ -16,7 +16,9 @@ const maxCount=()=>Math.max(1,...people.map(p=>p.count));
 function project(x,z,y=0){
  const rx=x*Math.cos(yaw)-z*Math.sin(yaw),rz=x*Math.sin(yaw)+z*Math.cos(yaw);
  const scale=Math.max(1,Math.min((width-80)/3.7,(height-80)/3.25))*zoom;
- return {x:width/2+rx*scale,y:height*.62+(rz*Math.sin(tilt)-y*Math.cos(tilt))*scale,depth:rz*Math.cos(tilt)+y*Math.sin(tilt)};
+ // Center the floor in top-down view; reserve headroom only when height is visible.
+ const centerY=height*(.5+.12*Math.cos(tilt));
+ return {x:width/2+rx*scale,y:centerY+(rz*Math.sin(tilt)-y*Math.cos(tilt))*scale,depth:rz*Math.cos(tilt)+y*Math.sin(tilt)};
 }
 function line(a,b,color,lineWidth=1){ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.strokeStyle=color;ctx.lineWidth=lineWidth;ctx.stroke();}
 function labelScale(){return width<600?.72:1;}
