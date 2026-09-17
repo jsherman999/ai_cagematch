@@ -1,13 +1,16 @@
+import { DEFAULT_AXES, validateAxes } from './lib/axes.js';
 import { createThreadProgress } from './lib/progress.js?v=poster-progress-1';
 import { installGraphGestures } from './lib/gestures.js';
 import { providers, detectProvider, selectProvider } from './lib/providers.js';
-import { listModels, analyze } from './lib/analysis.js?v=center-everyone-1';
+import { listModels, analyze, generateAxes } from './lib/analysis.js?v=custom-axes-1';
 import { parseThreadURL } from './lib/threads.js';
 
 const $=id=>document.getElementById(id);
 const canvas=$('plot'),ctx=canvas.getContext('2d');
 const progress=createThreadProgress(document);
 let showingProgress=false;
+const presets=new Map([['default',DEFAULT_AXES]]);
+let activeAxes=DEFAULT_AXES,presetCounter=0;
 const palette=['#daa1b8','#cfb7f4','#b7ace7','#b8c9ef','#b1dfd1','#c2e6ba','#e6d5a8','#d8bca4','#a6cad5','#d8d5c4'];
 let people=[],selected=0,width=0,height=0,projected=[],yaw=-.5,tilt=.65,zoom=1,demo=true;
 const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
@@ -25,8 +28,8 @@ function labelScale(){return width<600?.72:1;}
 function text(label,p,color,size=10){ctx.font=`600 ${size*labelScale()}px system-ui`;ctx.textAlign='center';ctx.lineWidth=width<600?2.5:4;ctx.strokeStyle='#19251e';ctx.strokeText(label,p.x,p.y);ctx.fillStyle=color;ctx.fillText(label,p.x,p.y);}
 function drawAxisLabels(){
  const entries=[
-  ['LOW POTENTIAL',project(-1.28,0),'#b5edcb'],['HIGH POTENTIAL',project(1.28,0),'#b5edcb'],
-  ['POLLYANNA',project(0,-1.3),'#c8b8ff'],['DOOMER',project(0,1.3),'#c8b8ff'],
+  [activeAxes.potential.low.toUpperCase(),project(-1.28,0),'#b5edcb'],[activeAxes.potential.high.toUpperCase(),project(1.28,0),'#b5edcb'],
+  [activeAxes.outlook.high.toUpperCase(),project(0,-1.3),'#c8b8ff'],[activeAxes.outlook.low.toUpperCase(),project(0,1.3),'#c8b8ff'],
   tilt<1.55?['POSTS',project(-1,1,1.95),'#f1d5a5']:['POST HEIGHT HIDDEN',{x:70,y:height-14},'#f1d5a5']
  ];
  const placed=[],fontSize=10*labelScale();
@@ -84,11 +87,11 @@ function select(i){
  document.querySelectorAll('.person').forEach((button,j)=>button.setAttribute('aria-pressed',String(i===j)));
  const p=people[i],detail=$('detail');detail.replaceChildren();if(!p){draw();return;}
  detail.append(node('h3',p.name),node('p',`@${p.handle} · ${p.count} retrieved ${p.count===1?'post':'posts'}`));
- for(const [key,label,color]of [['potential','Potential · low → high','var(--mint)'],['outlook','Outlook · doomer → Pollyanna','var(--purple)']]){
+ for(const [key,label,color]of [['potential',`${activeAxes.potential.name} · ${activeAxes.potential.low} → ${activeAxes.potential.high}`,'var(--mint)'],['outlook',`${activeAxes.outlook.name} · ${activeAxes.outlook.low} → ${activeAxes.outlook.high}`,'var(--purple)']]){
   const row=node('div',undefined,'score');row.append(node('span',label),node('span',`${Math.round(p[key])}/100${p.centeredAxes?.includes(key)?' · uncertain':''}`));detail.append(row);
   const track=node('div',undefined,'track'),fill=node('div',undefined,'fill');fill.style.width=`${p[key]??0}%`;fill.style.background=color;track.append(fill);detail.append(track);
  }
- if(p.centeredAxes?.length)detail.append(node('p',`Centered for lack of evidence: ${p.centeredAxes.join(' and ')}. Centered scores indicate uncertainty, not necessarily a neutral view.`));
+ if(p.centeredAxes?.length)detail.append(node('p',`Centered for lack of evidence: ${p.centeredAxes.map(key=>activeAxes[key].name).join(' and ')}. Centered scores indicate uncertainty, not necessarily a neutral view.`));
  detail.append(node('p',`${demo?'Demo estimate':`Model estimate · ${p.confidence} confidence`}. ${p.rationale}`));
  for(const e of p.evidence||[]){
   const box=node('blockquote',undefined,'evidence');box.append(node('p',`“${e.quote}”`));
@@ -103,14 +106,14 @@ function renderPeople(){
   const b=node('button',undefined,'person');b.type='button';b.title=`${p.name}: ${p.count} posts`;
   const dot=node('span',undefined,'dot');dot.style.background=palette[i%palette.length];b.append(dot,node('span',p.name,'name'),node('span',String(p.count),'count'));b.onclick=()=>select(i);list.append(b);
  });
- $('scores').textContent=people.map(p=>`${p.name}: potential ${p.potential??'unknown'}, outlook ${p.outlook??'unknown'}, ${p.count} retrieved posts.`).join(' ');
+ $('scores').textContent=people.map(p=>`${p.name}: ${activeAxes.potential.name} ${p.potential??'unknown'}, ${activeAxes.outlook.name} ${p.outlook??'unknown'}, ${p.count} retrieved posts.`).join(' ');
  select(0);
 }
 function generateDemo(){
  showingProgress=false;progress.hide();canvas.hidden=false;
  const names=['Alex','Morgan','Sam','Riley','Jordan','Casey','Quinn','Avery','Charlie','Taylor','Jamie','Drew','Robin','Skyler','Cameron','Sage','Blake','Reese','Rowan','Emery'];
  people=names.map((name,i)=>({id:`demo-${i}`,name,handle:name.toLowerCase(),potential:Math.round(8+Math.random()*84),outlook:Math.round(8+Math.random()*84),count:1+Math.floor(Math.random()*20),confidence:'low',rationale:'Fictional data for exploring the graph.',evidence:[]})).sort((a,b)=>b.count-a.count);
- demo=true;$('sample').textContent='DEMO · 20 FICTIONAL PEOPLE';$('people-badge').textContent='DEMO';$('coverage').textContent='Fictional sample. Height = post count. Analyze a thread to replace this data.';renderPeople();
+ demo=true;$('sample').textContent='DEMO · 20 FICTIONAL PEOPLE';$('people-badge').textContent='DEMO';$('coverage').textContent=`${activeAxes.name}. Fictional sample. Height = post count. Analyze a thread to replace this data.`;renderPeople();
 }
 function reset(top=false){yaw=top?0:-.5;tilt=top?Math.PI/2:.65;zoom=1;$('top').setAttribute('aria-pressed',String(top));draw();}
 installGraphGestures(canvas,{
@@ -132,16 +135,16 @@ new ResizeObserver(()=>{const rect=canvas.getBoundingClientRect();width=rect.wid
 let loadController=null,analysisController=null,loadVersion=0,debounce,busy=false;
 function status(message,error=false){$('status').textContent=message;$('status').classList.toggle('error',error);}
 function targetURL(){return parseThreadURL($('thread-url').value.trim());}
-function input(){const apiKey=$('api-key').value.trim();const provider=selectProvider($('provider').value,apiKey);return {provider:provider.id,apiKey,url:targetURL().url,model:$('model').value};}
-function clearModels(){loadVersion++;loadController?.abort();$('model').replaceChildren(new Option('Enter key and thread URL to load models',''));$('model').disabled=true;$('analyze').disabled=true;}
+function input(requireThread=true){const apiKey=$('api-key').value.trim();const provider=selectProvider($('provider').value,apiKey);return {provider:provider.id,apiKey,url:requireThread?targetURL().url:undefined,model:$('model').value,axes:activeAxes};}
+function clearModels(){loadVersion++;loadController?.abort();$('model').replaceChildren(new Option('Enter a provider key to load models',''));$('model').disabled=true;$('analyze').disabled=true;}
 function fieldsChanged(){
  clearTimeout(debounce);clearModels();
- if($('provider').value&&$('api-key').value&&$('thread-url').value){try{targetURL();debounce=setTimeout(loadModels,700);}catch(e){status(e.message,true);}}
+ if($('provider').value&&$('api-key').value)debounce=setTimeout(loadModels,700);
 }
 async function loadModels(){
  clearTimeout(debounce);if(busy)return;clearModels();const version=loadVersion;loadController=new AbortController();
  try{
-  const payload=input();if(!payload.apiKey)throw Error('Enter your provider API key.');status('Loading the provider’s model list…');
+  const payload=input(false);if(!payload.apiKey)throw Error('Enter your provider API key.');status('Loading the provider’s model list…');
   const result=await listModels(payload,{signal:loadController.signal});if(version!==loadVersion)return;
   $('model').replaceChildren(new Option('Choose a text chat model',''),...result.models.map(id=>new Option(id,id)));$('model').disabled=false;
   status(`${result.models.length} models loaded. Choose a text chat model, then analyze the thread.`);
@@ -154,7 +157,7 @@ function updateProviderHint(detected=false){
 }
 $('api-key').addEventListener('input',()=>{$('provider').value=detectProvider($('api-key').value)||'';updateProviderHint(Boolean($('provider').value));fieldsChanged();});
 $('provider').addEventListener('change',()=>{updateProviderHint();fieldsChanged();});
-$('thread-url').addEventListener('input',fieldsChanged);
+
 $('load-models').onclick=loadModels;$('model').onchange=()=>{$('analyze').disabled=!$('model').value||busy;};
 $('cancel').onclick=()=>analysisController?.abort();
 $('analysis-form').onsubmit=async event=>{
@@ -169,10 +172,10 @@ $('analysis-form').onsubmit=async event=>{
   progress.start();status('Fetching this thread and counting its posts…');
   const result=await analyze(payload,{signal:analysisController.signal,onPost:post=>progress.add(post),onAssessment:event=>progress.assessment(event),onProgress:message=>{status(message);progress.stage(message);}});
   if(!Array.isArray(result.people)||result.people.some(p=>!Number.isInteger(p.count)||p.count<1||typeof p.name!=='string'))throw Error('The analysis returned invalid results.');
-  showingProgress=false;progress.hide();canvas.hidden=false;people=result.people;demo=false;renderPeople();reset();
+  showingProgress=false;progress.hide();canvas.hidden=false;people=result.people;activeAxes=result.axes;updateAxisSummary();demo=false;renderPeople();reset();
   $('sample').textContent=`${result.platform.toUpperCase()} · ${people.length} POSTERS · ${result.totalPosts} POSTS`;
   $('people-badge').textContent='MODEL ESTIMATES';
-  $('coverage').textContent=`${result.totalPosts} retrieved posts by ${result.totalAuthors} authors. Top ${people.length} ranked by retrieved post count. ${result.warnings.join(' ')} Scope: ${result.url}`;
+  $('coverage').textContent=`${activeAxes.name}. ${result.totalPosts} retrieved posts by ${result.totalAuthors} authors. Top ${people.length} ranked by retrieved post count. ${result.warnings.join(' ')} Scope: ${result.url}`;
   const centered=people.filter(p=>p.centeredAxes?.length).length;
   status(`Analyzed with ${result.model}. ${people.length} plotted${centered?`; ${centered} centered on uncertain axes`:''}. Frequency is the count of retrieved posts, not an LLM estimate.`);
  }catch(e){
@@ -182,4 +185,54 @@ $('analysis-form').onsubmit=async event=>{
  }
  finally{busy=false;$('fields').disabled=false;$('shuffle').disabled=false;$('cancel').hidden=true;$('analyze').disabled=!$('model').value;analysisController=null;}
 };
+function updateAxisSummary(){
+ $('axis-summary').textContent=`${activeAxes.potential.name}: ${activeAxes.potential.low} → ${activeAxes.potential.high}. ${activeAxes.outlook.name}: ${activeAxes.outlook.low} → ${activeAxes.outlook.high}. Height: retrieved post count.`;
+ canvas.setAttribute('aria-label',`3D opinion graph. Drag or use arrow keys to rotate. Pinch, scroll, or use plus and minus to zoom. ${$('axis-summary').textContent} Select people from the list to inspect evidence.`);
+}
+function changePreset(){
+ activeAxes=presets.get($('axis-preset').value);updateAxisSummary();
+ // Scores belong to their criteria. Never reuse them under a different preset.
+ showingProgress=false;progress.hide();canvas.hidden=false;people=[];projected=[];renderPeople();
+ $('sample').textContent='READY FOR ANALYSIS';$('people-badge').textContent='NO RESULTS';
+ $('coverage').textContent=`Selected: ${activeAxes.name}. Analyze the thread using these criteria, or load a fictional demo crowd.`;
+ status('Axes changed. Analyze the thread to get new placements.');
+}
+$('axis-preset').onchange=changePreset;
+function showAxisEditor(definition){
+ const editor=$('axis-editor');editor.replaceChildren();
+ function field(id,label,value,max,multiline=false){
+  const wrapper=node('label',label),input=node(multiline?'textarea':'input');input.id=id;input.value=value;input.maxLength=max;if(multiline)input.rows=3;wrapper.append(input);return wrapper;
+ }
+ editor.append(field('preset-name','Preset name',definition.name,60));
+ for(const [key,title]of [['potential','First axis · left to right in top-down view'],['outlook','Second axis · bottom to top in top-down view']]){
+  const section=node('div',undefined,'axis-definition');section.append(node('h4',title));
+  const a=definition[key];
+  for(const [prop,label,max,multi]of [['name','Axis name',30,false],['low','0 endpoint label',24,false],['high','100 endpoint label',24,false],['criteria','Scoring criteria',1500,true],['center','Meaning of the center (50)',500,true]])section.append(field(`${key}-${prop}`,label,a[prop],max,multi));
+  editor.append(section);
+ }
+ $('axis-review').hidden=false;$('axis-builder').open=true;
+}
+$('edit-axes').onclick=()=>showAxisEditor(activeAxes);
+$('discard-axes').onclick=()=>{$('axis-review').hidden=true;$('axis-editor').replaceChildren();};
+$('save-axes').onclick=()=>{
+ try{
+  const definition={name:$('preset-name').value};
+  for(const key of ['potential','outlook'])definition[key]=Object.fromEntries(['name','low','high','criteria','center'].map(prop=>[prop,$(`${key}-${prop}`).value]));
+  const preset=validateAxes(definition),id=`custom-${++presetCounter}`;
+  presets.set(id,preset);$('axis-preset').append(new Option(preset.name,id));$('axis-preset').value=id;
+  $('axis-review').hidden=true;$('axis-editor').replaceChildren();$('axis-builder').open=false;changePreset();
+ }catch(e){status(e.message,true);}
+};
+$('generate-axes').onclick=async()=>{
+ if(busy)return;
+ try{
+  const payload=input(false);if(!payload.model)throw Error('Choose a model before generating axes.');
+  busy=true;clearTimeout(debounce);loadVersion++;loadController?.abort();$('fields').disabled=true;$('shuffle').disabled=true;$('cancel').hidden=false;
+  analysisController=new AbortController();status('Generating axis definitions with the selected model…');
+  const definition=await generateAxes({...payload,description:$('axis-description').value},{signal:analysisController.signal});
+  showAxisEditor(definition);status('Review the labels, scoring criteria, and center meanings. Save to add this preset for this session.');
+ }catch(e){status(e.name==='AbortError'?'Axis generation cancelled.':e.message,e.name!=='AbortError');}
+ finally{busy=false;$('fields').disabled=false;$('shuffle').disabled=false;$('cancel').hidden=true;$('analyze').disabled=!$('model').value;analysisController=null;}
+};
+updateAxisSummary();
 generateDemo();

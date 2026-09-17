@@ -33,3 +33,12 @@ aside .evidence{background:#152134;border-left-color:#6380a4}
 .discovered-poster.assessing .discovered-name{color:#ffe3e3}
 .discovered-poster.assessed{background:#234b34;border-color:#70b889}
 .discovered-poster.assessment-stopped{border-color:#df858a}
+.axis-controls{border-top:1px solid var(--border);padding-top:14px;margin-top:14px}
+#axis-summary{font-size:11px;color:#afbecd;overflow-wrap:anywhere}
+.axis-actions{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+#axis-builder>label{margin-top:12px}
+textarea{font:inherit;font-size:12px;width:100%;min-width:0;color:#e2eaf2;border:1px solid #435267;background:#111a27;border-radius:5px;padding:10px;resize:vertical}
+#axis-editor{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+#axis-editor>label{grid-column:1/-1}.axis-definition{min-width:0}.axis-definition label{margin-top:9px}
+#axis-review h3{font-size:14px;margin:16px 0 10px}.axis-definition h4{font-size:11px;color:#c4d4e6;margin:6px 0}
+@media(max-width:760px){#axis-editor{grid-template-columns:1fr}}

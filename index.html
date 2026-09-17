@@ -5,7 +5,7 @@
 <meta name="referrer" content="no-referrer">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self' https:; img-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
 <title>The AI Opinion Map</title>
-<link rel="stylesheet" href="style.css?v=poster-progress-1">
+<link rel="stylesheet" href="style.css?v=custom-axes-1">
 </head>
 <body>
 <main class="workspace" aria-label="AI opinion map">
@@ -19,7 +19,16 @@
 <p id="provider-hint" class="provider-hint" aria-live="polite">Recognizable keys are detected locally. Otherwise, choose a provider by name.</p>
 <label class="thread-input">Public Bluesky thread URL<input id="thread-url" type="url" placeholder="https://bsky.app/profile/…/post/…" required spellcheck="false"></label>
 </div>
-<div class="model-row"><label>Model<select id="model" disabled><option value="">Enter key and thread URL to load models</option></select></label><button id="load-models" type="button">Load models</button><button id="analyze" type="submit" class="primary" disabled>Analyze thread ↗</button></div>
+<div class="model-row"><label>Model<select id="model" disabled><option value="">Enter a provider key to load models</option></select></label><button id="load-models" type="button">Load models</button><button id="analyze" type="submit" class="primary" disabled>Analyze thread ↗</button></div>
+<div class="axis-controls">
+<label>Axis preset<select id="axis-preset"><option value="default">AI potential &amp; outlook</option></select></label>
+<p id="axis-summary"></p>
+<details id="axis-builder"><summary>Create or edit axes</summary>
+<label>Describe your two axes<textarea id="axis-description" maxlength="3000" rows="3" placeholder="For example: left vs right on economic policy, and support for policy A vs policy B"></textarea></label>
+<div class="axis-actions"><button id="generate-axes" type="button">Generate axes with selected model</button><button id="edit-axes" type="button">Edit selected preset</button></div>
+<p class="privacy">Generation sends this description to the selected provider/model and may incur charges. Review the interpretation before saving. Presets last until this page is refreshed. New criteria require a new thread analysis.</p>
+<div id="axis-review" hidden><h3>Review the interpretation</h3><div id="axis-editor"></div><div class="axis-actions"><button id="save-axes" type="button">Save &amp; use preset</button><button id="discard-axes" type="button">Discard draft</button></div></div>
+</details></div>
 </fieldset>
 <div class="status-row"><p id="status" role="status" aria-live="polite">Demo data. Enter your provider key and a Bluesky thread URL to begin.</p><button id="cancel" type="button" hidden>Cancel</button></div>
 <p class="privacy">Your key is kept in this page’s memory and sent only to the selected provider. No backend or saved keys. The provider must allow browser requests (CORS). Analyze sends this thread’s text to that provider and may incur charges. No DMs or profile history.</p>
@@ -39,5 +48,5 @@
 <div id="people"></div><div id="detail" aria-live="polite"></div><button id="shuffle" type="button">New demo crowd ↗</button>
 </aside>
 </main>
-<script src="app.js?v=pinned-axes-1" type="module"></script>
+<script src="app.js?v=custom-axes-1" type="module"></script>
 </body></html>
