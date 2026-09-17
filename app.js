@@ -23,18 +23,37 @@ function project(x,z,y=0){
 function line(a,b,color,lineWidth=1){ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.strokeStyle=color;ctx.lineWidth=lineWidth;ctx.stroke();}
 function labelScale(){return width<600?.72:1;}
 function text(label,p,color,size=10){ctx.font=`600 ${size*labelScale()}px system-ui`;ctx.textAlign='center';ctx.lineWidth=width<600?2.5:4;ctx.strokeStyle='#19251e';ctx.strokeText(label,p.x,p.y);ctx.fillStyle=color;ctx.fillText(label,p.x,p.y);}
+function drawAxisLabels(){
+ const entries=[
+  ['LOW POTENTIAL',project(-1.28,0),'#b5edcb'],['HIGH POTENTIAL',project(1.28,0),'#b5edcb'],
+  ['POLLYANNA',project(0,-1.3),'#c8b8ff'],['DOOMER',project(0,1.3),'#c8b8ff'],
+  tilt<1.55?['POSTS',project(-1,1,1.95),'#f1d5a5']:['POST HEIGHT HIDDEN',{x:70,y:height-14},'#f1d5a5']
+ ];
+ const placed=[],fontSize=10*labelScale();
+ ctx.font=`600 ${fontSize}px system-ui`;
+ for(const [label,point,color]of entries){
+  const w=ctx.measureText(label).width+12,h=fontSize+10;
+  const x=clamp(point.x,w/2+6,width-w/2-6),preferred=clamp(point.y, h+6,height-10);
+  let y=preferred;
+  // Keep labels readable when rotated axes meet the same viewport edge.
+  for(let step=0;step<entries.length*2;step++){
+   const candidate=clamp(preferred+(step%2?1:-1)*Math.ceil(step/2)*(h+4),h+6,height-10);
+   if(!placed.some(p=>Math.abs(x-p.x)<(w+p.w)/2+4&&Math.abs(candidate-p.y)<h+4)){y=candidate;break;}
+  }
+  placed.push({x,y,w});
+  ctx.fillStyle='#17211ff2';ctx.fillRect(x-w/2,y-fontSize-5,w,h);
+  text(label,{x,y},color);
+ }
+}
 function draw(){
  ctx.clearRect(0,0,width,height);
  if(showingProgress)return;
  for(let n=-1;n<=1.001;n+=.2){line(project(n,-1),project(n,1),'#8bae9326');line(project(-1,n),project(1,n),'#8bae9326');}
  line(project(-1.15,0),project(1.15,0),'#b5edcb88',1.5);line(project(0,-1.15),project(0,1.15),'#c8b8ff88',1.5);
- text('LOW POTENTIAL',project(-1.28,0),'#b5edcb');text('HIGH POTENTIAL',project(1.28,0),'#b5edcb');
- text('POLLYANNA',project(0,-1.3),'#c8b8ff');text('DOOMER',project(0,1.3),'#c8b8ff');
  if(tilt<1.55){
   line(project(-1,1),project(-1,1,1.8),'#f1d5a5',1.5);
   const ticks=[...new Set([0,Math.round(maxCount()/2),maxCount()])];
   ticks.forEach(n=>{const p=project(-1,1,n/maxCount()*1.6);line({x:p.x-4,y:p.y},{x:p.x+4,y:p.y},'#f1d5a5');text(String(n),{x:p.x-15,y:p.y+3},'#f1d5a5',9);});
-  text('POSTS',project(-1,1,1.95),'#f1d5a5');
  }
  projected=people.map((p,i)=>({...project((p.potential-50)/50,-(p.outlook-50)/50,p.count/maxCount()*1.6),i})).filter(p=>classified(people[p.i])).sort((a,b)=>b.depth-a.depth);
  const labels=[];
@@ -56,6 +75,7 @@ function draw(){
   position??={x:point.x+12,y:point.y+4,w};labels.push(position);
   ctx.textAlign='left';ctx.lineWidth=width<600?2.5:4;ctx.strokeStyle='#19251e';ctx.strokeText(name,position.x,position.y);ctx.fillStyle=active?'#fff':'#d5dfd7';ctx.fillText(name,position.x,position.y);
  });
+ drawAxisLabels();
  $('empty-plot').hidden=people.some(classified);
 }
 function node(tag,content,className){const el=document.createElement(tag);if(content!==undefined)el.textContent=content;if(className)el.className=className;return el;}
