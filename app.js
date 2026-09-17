@@ -1,7 +1,7 @@
 import { createThreadProgress } from './lib/progress.js?v=poster-progress-1';
 import { installGraphGestures } from './lib/gestures.js';
 import { providers, detectProvider, selectProvider } from './lib/providers.js';
-import { listModels, analyze } from './lib/analysis.js?v=poster-progress-1';
+import { listModels, analyze } from './lib/analysis.js?v=center-everyone-1';
 import { parseThreadURL } from './lib/threads.js';
 
 const $=id=>document.getElementById(id);
@@ -63,10 +63,10 @@ function select(i){
  const p=people[i],detail=$('detail');detail.replaceChildren();if(!p){draw();return;}
  detail.append(node('h3',p.name),node('p',`@${p.handle} · ${p.count} retrieved ${p.count===1?'post':'posts'}`));
  for(const [key,label,color]of [['potential','Potential · low → high','var(--mint)'],['outlook','Outlook · doomer → Pollyanna','var(--purple)']]){
-  const row=node('div',undefined,'score');row.append(node('span',label),node('span',p[key]===null?'Unknown':`${Math.round(p[key])}/100`));detail.append(row);
+  const row=node('div',undefined,'score');row.append(node('span',label),node('span',`${Math.round(p[key])}/100${p.centeredAxes?.includes(key)?' · uncertain':''}`));detail.append(row);
   const track=node('div',undefined,'track'),fill=node('div',undefined,'fill');fill.style.width=`${p[key]??0}%`;fill.style.background=color;track.append(fill);detail.append(track);
  }
- if(!classified(p))detail.append(node('p','Unclassified: not plotted because one or both opinion axes lack evidence.'));
+ if(p.centeredAxes?.length)detail.append(node('p',`Centered for lack of evidence: ${p.centeredAxes.join(' and ')}. Centered scores indicate uncertainty, not necessarily a neutral view.`));
  detail.append(node('p',`${demo?'Demo estimate':`Model estimate · ${p.confidence} confidence`}. ${p.rationale}`));
  for(const e of p.evidence||[]){
   const box=node('blockquote',undefined,'evidence');box.append(node('p',`“${e.quote}”`));
@@ -78,7 +78,7 @@ function select(i){
 function renderPeople(){
  const list=$('people');list.replaceChildren();
  people.forEach((p,i)=>{
-  const b=node('button',undefined,`person${classified(p)?'':' unclassified'}`);b.type='button';b.title=`${p.name}: ${p.count} posts${classified(p)?'':' · unclassified'}`;
+  const b=node('button',undefined,'person');b.type='button';b.title=`${p.name}: ${p.count} posts`;
   const dot=node('span',undefined,'dot');dot.style.background=palette[i%palette.length];b.append(dot,node('span',p.name,'name'),node('span',String(p.count),'count'));b.onclick=()=>select(i);list.append(b);
  });
  $('scores').textContent=people.map(p=>`${p.name}: potential ${p.potential??'unknown'}, outlook ${p.outlook??'unknown'}, ${p.count} retrieved posts.`).join(' ');
@@ -151,8 +151,8 @@ $('analysis-form').onsubmit=async event=>{
   $('sample').textContent=`${result.platform.toUpperCase()} · ${people.length} POSTERS · ${result.totalPosts} POSTS`;
   $('people-badge').textContent='MODEL ESTIMATES';
   $('coverage').textContent=`${result.totalPosts} retrieved posts by ${result.totalAuthors} authors. Top ${people.length} ranked by retrieved post count. ${result.warnings.join(' ')} Scope: ${result.url}`;
-  const unknown=people.filter(p=>!classified(p)).length;
-  status(`Analyzed with ${result.model}. ${people.length-unknown} plotted${unknown?`; ${unknown} unclassified (insufficient evidence)`:''}. Frequency is the count of retrieved posts, not an LLM estimate.`);
+  const centered=people.filter(p=>p.centeredAxes?.length).length;
+  status(`Analyzed with ${result.model}. ${people.length} plotted${centered?`; ${centered} centered on uncertain axes`:''}. Frequency is the count of retrieved posts, not an LLM estimate.`);
  }catch(e){
   const message=e.name==='AbortError'?'Analysis cancelled.':e.message;
   if(showingProgress){progress.stop(message);$('sample').textContent='NO ANALYSIS RESULTS';$('people-badge').textContent='NO RESULTS';$('detail').textContent='Start another analysis or load a demo crowd.';}

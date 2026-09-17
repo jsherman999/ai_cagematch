@@ -33,11 +33,11 @@ test('Bluesky expands a truncated descendant subtree without leaving the branch'
  assert.deepEqual(discovered.map(p=>p.id),result.posts.map(p=>p.id));
  assert.equal(result.posts.length,3);assert.equal(result.incomplete,false);
 });
-test('model evidence must match the supplied author and literal text; no evidence means no placement',()=>{
+test('model evidence must match the supplied author and literal text; no evidence means a labeled center placement',()=>{
  const authors=rankPosters([post('1','a'),post('2','b')]),supplied=prepareAuthors(authors);
  const raw={assessments:supplied.map(a=>({authorId:a.authorId,potential:90,outlook:90,confidence:'high',rationale:'Optimistic.',evidence:[{postId:'1',quote:'AI could transform everything'}]}))};
  const result=validateAssessments(raw,authors,supplied);
- assert.equal(result[0].potential,90);assert.equal(result[1].potential,null);assert.equal(result[1].outlook,null);assert.equal(result[0].count,1);
+ assert.equal(result[0].potential,90);assert.equal(result[1].potential,50);assert.equal(result[1].outlook,50);assert.equal(result[0].count,1);
  raw.assessments[0].potential=101;assert.throws(()=>validateAssessments(raw,authors,supplied),/invalid opinion score/);
 });
 test('missing and duplicate model assessments are rejected',()=>{
@@ -61,7 +61,7 @@ test('end-to-end fixture sends only thread text and validates model evidence',as
   return {choices:[{finish_reason:'stop',message:{content:JSON.stringify({assessments:[{authorId:'a1',potential:90,outlook:null,confidence:'medium',rationale:'Transformative potential, no outlook evidence.',evidence:[{postId:supplied.authors[0].posts[0].id,quote:'AI is transformative.'}]}]})}}]};
  };
  const result=await analyze({endpoint:'https://api.example.com/v1',apiKey:'test',model:'chosen-model',url:'https://bsky.app/profile/did:plc:abc/post/root'},{request});
- assert.equal(result.people[0].count,1);assert.equal(result.people[0].potential,90);assert.equal(result.people[0].outlook,null);assert.equal(result.totalPosts,1);
+ assert.equal(result.people[0].count,1);assert.equal(result.people[0].potential,90);assert.equal(result.people[0].outlook,50);assert.equal(result.totalPosts,1);
 });
 test('browser request does not use cookies, referrers or redirects; key goes in provider Authorization only',async()=>{
  let seen;
@@ -129,4 +129,16 @@ test('configured request timeout reports its actual duration',async()=>{
  const hold=setTimeout(()=>{},1000);
  try{await assert.rejects(jsonRequest('https://provider.example/v1',{timeoutMs:5,service:'LLM analysis',fetchImpl:async(_url,{signal})=>new Promise((_,reject)=>signal.addEventListener('abort',()=>reject(signal.reason),{once:true}))}),/timed out after 0 seconds/);}
  finally{clearTimeout(hold);}
+});
+test('each uncertain axis centers independently while single-post directional and tentative estimates survive',()=>{
+ const authors=rankPosters([post('1','a')]),supplied=prepareAuthors(authors);
+ const assessment={authorId:'a1',potential:85,outlook:null,confidence:'medium',rationale:'Potential is clear; outlook is uncertain.',evidence:[{postId:'1',quote:'AI could transform everything'}]};
+ const validate=()=>validateAssessments({assessments:[assessment]},authors,supplied)[0];
+ let result=validate();assert.equal(result.potential,85);assert.equal(result.outlook,50);assert.deepEqual(result.centeredAxes,['outlook']);
+ assessment.potential=null;assessment.outlook=15;
+ result=validate();assert.equal(result.potential,50);assert.equal(result.outlook,15);assert.deepEqual(result.centeredAxes,['potential']);
+ assessment.potential=47;assessment.outlook=53;
+ result=validate();assert.equal(result.potential,47);assert.equal(result.outlook,53);assert.deepEqual(result.centeredAxes,[]);
+ assessment.evidence=[];
+ result=validate();assert.equal(result.potential,50);assert.equal(result.outlook,50);assert.deepEqual(result.centeredAxes,['potential','outlook']);assert.equal(result.confidence,'low');assert.match(result.rationale,/uncertain placement/);
 });

@@ -29,15 +29,15 @@
 <p id="progress-summary" role="status">Connecting to Bluesky…</p>
 <div id="progress-posters"></div>
 <p id="progress-note">Post counts appear as this thread is retrieved. Opinion positions appear after analysis.</p>
-</div><canvas id="plot" tabindex="0" aria-label="3D opinion graph. Drag or use arrow keys to rotate. Pinch, scroll, or use plus and minus to zoom. Potential and outlook form the floor; height is retrieved post count. Select people from the list to inspect evidence." aria-describedby="scores"></canvas><div id="empty-plot" hidden>No posters have enough evidence for both opinion axes. See their counts in The People.</div></div>
+</div><canvas id="plot" tabindex="0" aria-label="3D opinion graph. Drag or use arrow keys to rotate. Pinch, scroll, or use plus and minus to zoom. Potential and outlook form the floor; height is retrieved post count. Select people from the list to inspect evidence." aria-describedby="scores"></canvas><div id="empty-plot" hidden>No posters to display. Analyze a thread or load a demo crowd.</div></div>
 <div class="plot-tools"><span>Drag to rotate · Pinch or scroll to zoom</span><div><button id="reset" type="button">Reset view</button><button id="top" type="button" aria-pressed="false">Top-down</button></div></div>
 <p id="coverage"></p><p id="scores" class="sr-only"></p>
 </section>
 <aside>
 <div class="aside-heading"><h2>The people</h2><span id="people-badge">DEMO</span></div>
-<p class="aside-copy">Top 20 by retrieved posts in this thread. Select a poster to inspect scores and evidence.</p>
+<p class="aside-copy">Top 20 by retrieved posts in this thread. Select a poster to inspect scores and evidence. Uncertain views are placed near the center.</p>
 <div id="people"></div><div id="detail" aria-live="polite"></div><button id="shuffle" type="button">New demo crowd ↗</button>
 </aside>
 </main>
-<script src="app.js?v=poster-progress-1" type="module"></script>
+<script src="app.js?v=center-everyone-1" type="module"></script>
 </body></html>
