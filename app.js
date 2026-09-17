@@ -1,14 +1,16 @@
+import { createUsageLedger } from './lib/usage.js';
 import { DEFAULT_AXES, validateAxes } from './lib/axes.js';
 import { createThreadProgress } from './lib/progress.js?v=poster-progress-1';
 import { installGraphGestures } from './lib/gestures.js';
 import { providers, detectProvider, selectProvider } from './lib/providers.js';
-import { listModels, analyze, generateAxes } from './lib/analysis.js?v=custom-axes-1';
+import { listModels, analyze, generateAxes } from './lib/analysis.js?v=session-usage-1';
 import { parseThreadURL } from './lib/threads.js';
 
 const $=id=>document.getElementById(id);
 const canvas=$('plot'),ctx=canvas.getContext('2d');
 const progress=createThreadProgress(document);
 let showingProgress=false;
+const usageLedger=createUsageLedger();
 const presets=new Map([['default',DEFAULT_AXES]]);
 let activeAxes=DEFAULT_AXES,presetCounter=0;
 const palette=['#daa1b8','#cfb7f4','#b7ace7','#b8c9ef','#b1dfd1','#c2e6ba','#e6d5a8','#d8bca4','#a6cad5','#d8d5c4'];
@@ -170,7 +172,7 @@ $('analysis-form').onsubmit=async event=>{
   $('sample').textContent='READING THREAD';$('people-badge').textContent='WAITING';$('coverage').textContent='';
   $('detail').textContent='Posters and their opinion estimates will appear when analysis is complete.';
   progress.start();status('Fetching this thread and counting its posts…');
-  const result=await analyze(payload,{signal:analysisController.signal,onPost:post=>progress.add(post),onAssessment:event=>progress.assessment(event),onProgress:message=>{status(message);progress.stage(message);}});
+  const result=await analyze(payload,{signal:analysisController.signal,onUsage:recordUsage,onPost:post=>progress.add(post),onAssessment:event=>progress.assessment(event),onProgress:message=>{status(message);progress.stage(message);}});
   if(!Array.isArray(result.people)||result.people.some(p=>!Number.isInteger(p.count)||p.count<1||typeof p.name!=='string'))throw Error('The analysis returned invalid results.');
   showingProgress=false;progress.hide();canvas.hidden=false;people=result.people;activeAxes=result.axes;updateAxisSummary();demo=false;renderPeople();reset();
   $('sample').textContent=`${result.platform.toUpperCase()} · ${people.length} POSTERS · ${result.totalPosts} POSTS`;
@@ -229,10 +231,22 @@ $('generate-axes').onclick=async()=>{
   const payload=input(false);if(!payload.model)throw Error('Choose a model before generating axes.');
   busy=true;clearTimeout(debounce);loadVersion++;loadController?.abort();$('fields').disabled=true;$('shuffle').disabled=true;$('cancel').hidden=false;
   analysisController=new AbortController();status('Generating axis definitions with the selected model…');
-  const definition=await generateAxes({...payload,description:$('axis-description').value},{signal:analysisController.signal});
+  const definition=await generateAxes({...payload,description:$('axis-description').value},{signal:analysisController.signal,onUsage:recordUsage});
   showAxisEditor(definition);status('Review the labels, scoring criteria, and center meanings. Save to add this preset for this session.');
  }catch(e){status(e.name==='AbortError'?'Axis generation cancelled.':e.message,e.name!=='AbortError');}
  finally{busy=false;$('fields').disabled=false;$('shuffle').disabled=false;$('cancel').hidden=true;$('analyze').disabled=!$('model').value;analysisController=null;}
 };
 updateAxisSummary();
 generateDemo();
+
+function recordUsage(event){
+ usageLedger.record(event);
+ const s=usageLedger.snapshot(),count=n=>n.toLocaleString(),money=n=>n>0&&n<.0001?'<$0.0001':`$${n.toFixed(4)}`;
+ const cost=s.priced?`${money(s.cost)}${s.unpriced?' partial cost':''}`:s.requests?'cost unavailable':'$0.00';
+ $('usage-summary').textContent=`Session · ${count(s.total)}${s.unknown?'+':''} tokens · ${cost}${s.pending?` · ${s.pending} pending`:''}${s.unknown?' · unreported usage':''}`;
+ const box=$('usage-breakdown');box.replaceChildren();
+ for(const r of s.rows){
+  const provider=providers.find(p=>p.id===r.provider)?.name??r.provider;
+  box.append(node('p',`${provider} / ${r.model}: ${count(r.input)} input + ${count(r.output)} output = ${count(r.total)} reported tokens. ${r.priced?money(r.cost)+' reported cost':'Cost unavailable'}${r.unpriced?`; cost unavailable for ${r.unpriced} request(s)`:''}. ${r.requests} requests${r.pending?`, ${r.pending} pending`:''}${r.unknown?`, ${r.unknown} with incomplete or unreported usage`:''}.`));
+ }
+}

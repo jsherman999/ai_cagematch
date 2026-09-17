@@ -42,3 +42,6 @@ textarea{font:inherit;font-size:12px;width:100%;min-width:0;color:#e2eaf2;border
 #axis-editor>label{grid-column:1/-1}.axis-definition{min-width:0}.axis-definition label{margin-top:9px}
 #axis-review h3{font-size:14px;margin:16px 0 10px}.axis-definition h4{font-size:11px;color:#c4d4e6;margin:6px 0}
 @media(max-width:760px){#axis-editor{grid-template-columns:1fr}}
+#session-usage{margin-top:12px;font-size:10px;color:var(--muted)}
+#session-usage summary{font-size:10px;font-variant-numeric:tabular-nums;color:#afbecd}
+#usage-breakdown p{font-size:11px;overflow-wrap:anywhere;margin:8px 0}

@@ -5,7 +5,7 @@
 <meta name="referrer" content="no-referrer">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self' https:; img-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
 <title>The AI Opinion Map</title>
-<link rel="stylesheet" href="style.css?v=custom-axes-1">
+<link rel="stylesheet" href="style.css?v=session-usage-1">
 </head>
 <body>
 <main class="workspace" aria-label="AI opinion map">
@@ -31,6 +31,7 @@
 </details></div>
 </fieldset>
 <div class="status-row"><p id="status" role="status" aria-live="polite">Demo data. Enter your provider key and a Bluesky thread URL to begin.</p><button id="cancel" type="button" hidden>Cancel</button></div>
+<details id="session-usage"><summary id="usage-summary">Session · 0 tokens · $0.00</summary><div id="usage-breakdown"></div><p class="privacy">Updates as model responses arrive, including axis generation. USD costs are provider-reported when available; other costs are unavailable. Missing usage may include timed-out or cancelled requests that were billed. Totals exclude unreported usage, taxes, and credit-purchase fees. Resets on refresh.</p></details>
 <p class="privacy">Your key is kept in this page’s memory and sent only to the selected provider. No backend or saved keys. The provider must allow browser requests (CORS). Analyze sends this thread’s text to that provider and may incur charges. No DMs or profile history.</p>
 </form></div>
 <div class="canvas-wrap"><div id="thread-progress" hidden>
@@ -48,5 +49,5 @@
 <div id="people"></div><div id="detail" aria-live="polite"></div><button id="shuffle" type="button">New demo crowd ↗</button>
 </aside>
 </main>
-<script src="app.js?v=custom-axes-1" type="module"></script>
+<script src="app.js?v=session-usage-1" type="module"></script>
 </body></html>
